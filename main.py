@@ -72,7 +72,7 @@ def register_viewer(payload: ViewerPayload):
 
 from fastapi import Body
 
-@app.get("/get_key/{image_id}")
+@app.post("/get_key/{image_id}")
 def get_key(image_id: str, payload: dict = Body(...)):
     viewer_username = payload.get("username")
     token = payload.get("token")
