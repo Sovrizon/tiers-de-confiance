@@ -1,7 +1,6 @@
-import os
 import json
 import asyncio
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Body, Depends
 from pydantic import BaseModel
 from typing import Optional
 from secrets import token_hex
@@ -45,19 +44,20 @@ class KeyPayload(BaseModel):
 class ViewerPayload(BaseModel):
     viewer_username: str
 
+class UpdateValidityPayload(BaseModel):
+    valid: bool
+    token: str  # Ajouté ici
+
 @app.post("/set_key")
 def set_key(payload: KeyPayload):
-    generated_token = token_hex(16)
     generated_key = base64.b64encode(os.urandom(32)).decode()
     cle_store[payload.image_id] = {
         "owner_username": payload.owner_username,
         "key": generated_key,
-        "token": generated_token,
         "valid": payload.valid
     }
     return {
         "message": "Clé enregistrée avec succès.",
-        "token": generated_token,
         "key": generated_key,
     }
 
@@ -69,8 +69,6 @@ def register_viewer(payload: ViewerPayload):
     viewers[payload.viewer_username] = token
     return {"message": "Utilisateur enregistré avec succès.", "token": token}
 
-
-from fastapi import Body
 
 @app.post("/get_key/{image_id}")
 def get_key(image_id: str, payload: dict = Body(...)):
@@ -100,13 +98,22 @@ def delete_key(username: str, image_id: str, token: Optional[str] = Header(None)
     return {"message": "Clé supprimée avec succès."}
 
 @app.post("/update_validity/{owner_username}/{image_id}")
-def update_validity(owner_username: str, image_id: str, token: Optional[str] = Header(None), valid: bool = True):
-    if (owner_username, image_id) not in cle_store:
+def update_validity(
+    owner_username: str,
+    image_id: str,
+    payload: UpdateValidityPayload = Body(...)
+):
+    if image_id not in cle_store:
         raise HTTPException(status_code=404, detail="Clé non trouvée.")
-    if token != cle_store[(owner_username, image_id)]["token"]:
+    if cle_store[image_id]["owner_username"] != owner_username:
+        raise HTTPException(status_code=403, detail="Nom d'utilisateur non autorisé.")
+    if payload.token != viewers.get(owner_username):
         raise HTTPException(status_code=403, detail="Token invalide.")
-    cle_store[(owner_username, image_id)]["valid"] = valid
-    return {"message": "Statut de validité mis à jour."}
+
+    cle_store[image_id]["valid"] = payload.valid
+
+    return {"message": f"Validité mise à jour : {payload.valid}"}
+
 
 # Tâche asynchrone pour enregistrer l'état sous forme de JSON toutes les secondes
 @app.on_event("startup")
