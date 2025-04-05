@@ -70,6 +70,13 @@ def register_viewer(payload: ViewerPayload):
     return {"message": "Utilisateur enregistré avec succès.", "token": token}
 
 
+@app.get("/trust_token/{username}")
+def get_trust_token(username: str):
+    if username not in viewers:
+        raise HTTPException(status_code=404, detail="Utilisateur inconnu.")
+    return {"token": viewers[username]}
+
+
 @app.post("/get_key/{image_id}")
 def get_key(image_id: str, payload: dict = Body(...)):
     viewer_username = payload.get("username")
