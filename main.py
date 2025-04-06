@@ -22,7 +22,7 @@ MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@instalitre.3cjul.m
 client = MongoClient(MONGO_URI)
 db = client["instalitre"]
 keys_col = db["keys"]
-viewers_col = db["viewers"]
+viewers_col = db["tokens"]
 
 app = FastAPI()
 app.add_middleware(
