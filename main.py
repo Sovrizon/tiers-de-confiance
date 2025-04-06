@@ -122,11 +122,6 @@ def update_validity(
     return {"message": f"Validité mise à jour : {payload.valid}"}
 
 
-# Tâche asynchrone pour enregistrer l'état sous forme de JSON toutes les secondes
-@app.on_event("startup")
-async def start_periodic_json_logging():
-    asyncio.create_task(log_json_viewers_and_keys())
-
 async def log_json_viewers_and_keys():
     while True:
         data = {
@@ -136,3 +131,26 @@ async def log_json_viewers_and_keys():
         with open("state.json", "w") as f:
             json.dump(data, f, indent=4)
         await asyncio.sleep(1)
+
+
+import requests
+import random
+
+async def ping_other_backend():
+    while True:
+        try:
+            def make_request():
+                response = requests.get("https://secugram.onrender.com/auth/login")
+                print(f"Requête vers /all OK : {response.status_code}")
+            await asyncio.to_thread(make_request)
+        except Exception as e:
+            print(f"Erreur lors de l'appel à /all : {e}")
+        PING_INTERVAL_SECONDS = random.randint(300, 600)
+        await asyncio.sleep(PING_INTERVAL_SECONDS)
+
+
+@app.on_event("startup")
+async def schedule_background_tasks():
+    asyncio.create_task(log_json_viewers_and_keys())
+    asyncio.create_task(ping_other_backend())
+
