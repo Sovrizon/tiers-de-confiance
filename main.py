@@ -184,7 +184,8 @@ async def ping_other_backend():
     while True:
         try:
             def make_request():
-                response = requests.get("https://secugram.onrender.com/auth/login")
+                # response = requests.get("https://secugram.onrender.com/auth/login") render
+                response = requests.get("https://secugram-production.up.railway.app//auth/login")
                 print(f"Requête vers /all OK : {response.status_code}")
 
             await asyncio.to_thread(make_request)
