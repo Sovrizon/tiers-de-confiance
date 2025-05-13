@@ -25,29 +25,59 @@ Le tiers de confiance est un composant essentiel du système Sovrizon. Il est re
 
 ## 🚀 Installation
 
-1. Cloner le dépôt :
+### 1. Cloner le dépôt :
 
 ```bash
 git clone https://github.com/Sovrizon/tiers-de-confiance.git
 cd tiers-de-confiance
 ```
 
-2. Installer les dépendances :
+### 2. Installer les dépendances :
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Configurer les variables d'environnement :
 
-Créez un fichier `.env` à la racine du projet avec les variables suivantes :
+### 3. Configuration de MongoDB 
+
+
+#### Installation de MongoDB et mongosh
+- Pour installer MongoDB : [Guide d'installation](https://www.mongodb.com/docs/manual/installation/)
+- Pour installer mongosh : [Guide d'installation](https://www.mongodb.com/docs/mongodb-shell/install/)
+
+
+#### Simplification avec Cloud MongoDB
+
+Vous pouvez également utiliser un service de base de données cloud comme [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) pour éviter d'installer MongoDB localement.
+
+
+#### Installation de MongoDB localement
+
+Si vous souhaitez utiliser MongoDB localement, vous devez créer un utilisateur avec les droits d'accès à la base de données. Voici comment procéder : [tutoriel](https://www.mongodb.com/resources/products/fundamentals/create-database).
+
+
+
+
+
+
+#### Configuration du fichier .env pour le backend
+
+Créez un fichier `.env` à la racine du projet avec la variable suivante :
+
 ```
-MONGO_USERNAME=votre_username_mongodb
-MONGO_PASSWORD=votre_password_mongodb
-MONGO_HOST="localhost:27017"  # Remplacez par votre host:port MongoDB
+MONGO_URI="mongodb://<username>:<password>@localhost:27017" # local
 ```
 
-4. Lancer l'application :
+ou
+
+```
+MONGO_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/test" # cloud
+```
+
+
+
+### 4. Lancer l'application :
 
 ```bash
 uvicorn main:app --reload --port 8300
