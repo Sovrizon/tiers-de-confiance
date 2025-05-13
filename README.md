@@ -67,22 +67,6 @@ uvicorn main:app --reload --port 8300
 
 ---
 
-## 🔌 API Endpoints
-
-### Gestion des clés
-
-- **POST /set_key** : Génère et stocke une nouvelle clé pour une image
-- **GET /get_key/{image_id}** : Récupère la clé pour une image spécifique
-- **DELETE /delete_key/{username}/{image_id}** : Supprime une clé
-- **POST /update_validity/{owner_username}/{image_id}** : Met à jour la validité d'une clé
-
-### Gestion des utilisateurs
-
-- **POST /register_viewer** : Enregistre un nouvel utilisateur
-- **GET /trust_token/{username}** : Récupère le token de confiance d'un utilisateur
-
----
-
 ## 🧩 Intégration système
 
 Ce serveur est conçu pour fonctionner en conjonction avec :
