@@ -7,22 +7,56 @@ from secrets import token_hex
 import base64
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 from bson import ObjectId
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# MongoDB Connection
 MONGO_USERNAME = os.getenv("MONGO_USERNAME")
 MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
-MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@instalitre.3cjul.mongodb.net/"
+MONGO_HOST = os.getenv("MONGO_HOST")
+
+MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/"
 
 client = MongoClient(MONGO_URI)
-db = client["instalitre"]
-keys_col = db["keys"]
-viewers_col = db["tokens"]
+
+
+try:
+    print("[INFO] Connexion à MongoDB...")
+    client = MongoClient(MONGO_URI)
+    db = client["tiers-de-confiance"]
+    print("[OK] Connexion établie.")
+except errors.ConnectionFailure as e:
+    print(f"[ERREUR] Échec de connexion : {e}")
+    exit(1)
+
+
+
+try:
+    collections = db.list_collection_names()
+    print(f"[INFO] Collections existantes : {collections}")
+
+    if "keys" not in collections:
+        print("[INFO] Création de la collection 'keys'...")
+        db.create_collection("keys")
+        print("[OK] Collection 'keys' créée.")
+
+    if "tokens" not in collections:
+        print("[INFO] Création de la collection 'tokens'...")
+        db.create_collection("tokens")
+        print("[OK] Collection 'tokens' créée.")
+
+    keys_col = db["keys"]
+    tokens_col = db["tokens"]
+    print("[OK] Accès aux collections réussi.")
+    
+except errors.PyMongoError as e:
+    print(f"[ERREUR] Problème lors de l'accès ou la création des collections : {e}")
+    exit(1)
+
+
+
 
 app = FastAPI()
 app.add_middleware(
@@ -89,13 +123,13 @@ def set_key(payload: KeyPayload):
 
 @app.post("/register_viewer")
 def register_viewer(payload: ViewerPayload):
-    existing_viewer = viewers_col.find_one({"username": payload.viewer_username})
+    existing_viewer = tokens_col.find_one({"username": payload.viewer_username})
 
     if existing_viewer:
         return {"message": "Utilisateur déjà enregistré.", "token": existing_viewer["token"]}
 
     token = token_hex(16)
-    viewers_col.insert_one({
+    tokens_col.insert_one({
         "username": payload.viewer_username,
         "token": token
     })
@@ -105,7 +139,7 @@ def register_viewer(payload: ViewerPayload):
 
 @app.get("/trust_token/{username}")
 def get_trust_token(username: str):
-    viewer = viewers_col.find_one({"username": username})
+    viewer = tokens_col.find_one({"username": username})
     if not viewer:
         raise HTTPException(status_code=404, detail="Utilisateur inconnu.")
 
@@ -123,7 +157,7 @@ def get_key(image_id: str, payload: dict = Body(...)):
         raise HTTPException(status_code=404, detail="Clé non trouvée.")
 
     # Verify viewer token
-    viewer = viewers_col.find_one({"username": viewer_username})
+    viewer = tokens_col.find_one({"username": viewer_username})
     is_valid_viewer = viewer and viewer["token"] == token
 
     if not is_valid_viewer:
@@ -142,7 +176,7 @@ def delete_key(username: str, image_id: str, token: Optional[str] = Header(None)
     if not key_data:
         raise HTTPException(status_code=404, detail="Clé non trouvée.")
 
-    viewer = viewers_col.find_one({"username": username})
+    viewer = tokens_col.find_one({"username": username})
     if not viewer or viewer["token"] != token:
         raise HTTPException(status_code=403, detail="Token invalide.")
 
@@ -164,7 +198,7 @@ def update_validity(
     if key_data["owner_username"] != owner_username:
         raise HTTPException(status_code=403, detail="Nom d'utilisateur non autorisé.")
 
-    viewer = viewers_col.find_one({"username": owner_username})
+    viewer = tokens_col.find_one({"username": owner_username})
     if not viewer or viewer["token"] != payload.token:
         raise HTTPException(status_code=403, detail="Token invalide.")
 
@@ -174,28 +208,3 @@ def update_validity(
     )
 
     return {"message": f"Validité mise à jour : {payload.valid}"}
-
-
-import requests
-import random
-
-
-async def ping_other_backend():
-    while True:
-        try:
-            def make_request():
-                # response = requests.get("https://secugram.onrender.com/auth/login") render
-                response = requests.get("https://secugram-production.up.railway.app//auth/login")
-                print(f"Requête vers /all OK : {response.status_code}")
-
-            await asyncio.to_thread(make_request)
-        except Exception as e:
-            print(f"Erreur lors de l'appel à /all : {e}")
-        PING_INTERVAL_SECONDS = random.randint(300, 600)
-        await asyncio.sleep(PING_INTERVAL_SECONDS)
-
-
-@app.on_event("startup")
-async def schedule_background_tasks():
-    # No need to save to JSON file anymore
-    asyncio.create_task(ping_other_backend())
