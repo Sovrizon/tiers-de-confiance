@@ -21,13 +21,7 @@ Le tiers de confiance est un composant essentiel du système Sovrizon. Il est re
 
 ---
 
-## 🌐 Dépendances externes
 
-- **Frontend Secugram** : [https://secugram-82493.web.app/](https://secugram-82493.web.app/)
-- **Backend Secugram** : [https://secugram.onrender.com/docs](https://secugram.onrender.com/docs)
-- **Documentation API** : [https://tiers-de-confiance.onrender.com/docs](https://tiers-de-confiance.onrender.com/docs)
-
----
 
 ## 🚀 Installation
 
@@ -50,12 +44,13 @@ Créez un fichier `.env` à la racine du projet avec les variables suivantes :
 ```
 MONGO_USERNAME=votre_username_mongodb
 MONGO_PASSWORD=votre_password_mongodb
+MONGO_HOST="localhost:27017"  # Remplacez par votre host:port MongoDB
 ```
 
 4. Lancer l'application :
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8300
 ```
 
 ---
